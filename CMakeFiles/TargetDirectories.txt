@@ -1,2 +1,11 @@
+/Users/miawallace/Documents/GitHub/step-Trace/CMakeFiles/step-Trace.dir
+/Users/miawallace/Documents/GitHub/step-Trace/CMakeFiles/run.dir
+/Users/miawallace/Documents/GitHub/step-Trace/CMakeFiles/sign.dir
+/Users/miawallace/Documents/GitHub/step-Trace/CMakeFiles/debug.dir
+/Users/miawallace/Documents/GitHub/step-Trace/CMakeFiles/release.dir
+/Users/miawallace/Documents/GitHub/step-Trace/CMakeFiles/runclean.dir
+/Users/miawallace/Documents/GitHub/step-Trace/CMakeFiles/distclean.dir
+/Users/miawallace/Documents/GitHub/step-Trace/CMakeFiles/strip_comments.dir
+/Users/miawallace/Documents/GitHub/step-Trace/CMakeFiles/info.dir
 /Users/miawallace/Documents/GitHub/step-Trace/CMakeFiles/edit_cache.dir
 /Users/miawallace/Documents/GitHub/step-Trace/CMakeFiles/rebuild_cache.dir

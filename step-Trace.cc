@@ -487,7 +487,7 @@ double RightHandSide<dim>::value(const Point<dim> &p,
         /*const std_cxx17::optional<FEValues<dim>> &intersected_fe_values =
          	non_matching_fe_values.get_intersected_fe_values(); //Doesn't exist!
 */
-	const std_cxx17::optional<NonMatching::FEImmersedSurfaceValues<dim>>
+	const std::optional<NonMatching::FEImmersedSurfaceValues<dim>>
           &surface_fe_values = non_matching_fe_values.get_surface_fe_values();
 
         if (surface_fe_values) {
@@ -855,7 +855,7 @@ double RightHandSide<dim>::value(const Point<dim> &p,
           }
           */
           
-           const std_cxx17::optional<NonMatching::FEImmersedSurfaceValues<dim>>
+           const std::optional<NonMatching::FEImmersedSurfaceValues<dim>>
           &surface_fe_values = non_matching_fe_values.get_surface_fe_values();
 
         if (surface_fe_values)
@@ -918,7 +918,7 @@ double RightHandSide<dim>::value(const Point<dim> &p,
         non_matching_fe_values.reinit(cell);
         
                 
-           const std_cxx17::optional<NonMatching::FEImmersedSurfaceValues<dim>>
+           const std::optional<NonMatching::FEImmersedSurfaceValues<dim>>
           &surface_fe_values = non_matching_fe_values.get_surface_fe_values();
 
         if (surface_fe_values)
@@ -987,7 +987,7 @@ double RightHandSide<dim>::value(const Point<dim> &p,
         non_matching_fe_values.reinit(cell);
         timer.stop();
 
-        const std_cxx17::optional<NonMatching::FEImmersedSurfaceValues<dim>>
+        const std::optional<NonMatching::FEImmersedSurfaceValues<dim>>
           &surface_fe_values = non_matching_fe_values.get_surface_fe_values();
 
 
@@ -1051,7 +1051,7 @@ double RightHandSide<dim>::value(const Point<dim> &p,
         non_matching_fe_values.reinit(cell);
         timer.stop();
 
-        const std_cxx17::optional<FEValues<dim>> &fe_values =
+        const std::optional<FEValues<dim>> &fe_values =
           non_matching_fe_values.get_inside_fe_values();
 
         if (fe_values)
