@@ -209,7 +209,7 @@ double RightHandSide<dim>::value(const Point<dim> &p,
     level_set_dof_handler.distribute_dofs(fe_level_set);
     level_set.reinit(level_set_dof_handler.n_dofs());
 
-    const Point< dim > & 	center = Point<dim>(1,1);
+    const Point< dim > & 	center = Point<dim>(1,1,1);
     const Functions::SignedDistance::Sphere<dim> signed_distance_sphere(center, 0.5 );
     VectorTools::interpolate(level_set_dof_handler,
                              signed_distance_sphere,
@@ -731,7 +731,7 @@ double RightHandSide<dim>::value(const Point<dim> &p,
     std::cout << "Writing vtu file" << std::endl;
 
     DataOut<dim> data_out;
-    data_out.add_data_vector(dof_handler, solution, "solution");
+    //data_out.add_data_vector(dof_handler, solution, "solution");
     data_out.add_data_vector(level_set_dof_handler, level_set, "level_set");
 
     data_out.set_cell_selection(
@@ -1094,7 +1094,7 @@ double RightHandSide<dim>::value(const Point<dim> &p,
   void LaplaceBeltramiSolver<dim>::run()
   {
     ConvergenceTable   convergence_table;
-    const unsigned int n_refinements = 20;
+    const unsigned int n_refinements = 5;
 
     make_grid();
     for (unsigned int cycle = 0; cycle <= n_refinements; cycle++)
@@ -1178,7 +1178,7 @@ double RightHandSide<dim>::value(const Point<dim> &p,
 // @sect3{The main() function}
 int main()
 {
-  const int dim = 2;
+  const int dim = 3;
 
   StepTrace::LaplaceBeltramiSolver<dim> LB_solver;
   LB_solver.run();
