@@ -188,12 +188,11 @@ double RightHandSide<dim>::value(const Point<dim> &p,
     std::cout << "Creating background mesh" << std::endl;
     GridGenerator::subdivided_hyper_cube 	( 	triangulation,
                                               3,
-                                              0.0, 2.0);
+                                              0.0, 1.0);
 
     //GridGenerator::hyper_cube(triangulation, 0.0, 2.0);
     //triangulation.refine_global(1);
   }
-
 
 
   // @sect3{Setting up the Discrete Level Set Function}
@@ -1152,12 +1151,12 @@ double RightHandSide<dim>::value(const Point<dim> &p,
         convergence_table.evaluate_convergence_rates(
           "CPU_intersect_accumulation", ConvergenceTable::reduction_rate_log2);
 
-        convergence_table.add_value("Error_interface", abs(interface-1*PI));
+        convergence_table.add_value("Error_interface", abs(interface-(1/8)*PI));
         convergence_table.evaluate_convergence_rates(
           "Error_interface", ConvergenceTable::reduction_rate_log2);
         convergence_table.set_scientific("Error_interface", true);
 
-        convergence_table.add_value("Error_inside", abs(inside-0.25*PI));
+        convergence_table.add_value("Error_inside", abs(inside-(1/48)*PI));
         convergence_table.evaluate_convergence_rates(
           "Error_inside", ConvergenceTable::reduction_rate_log2);
         convergence_table.set_scientific("Error_inside", true);
