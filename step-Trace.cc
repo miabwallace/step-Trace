@@ -1,3 +1,4 @@
+
 /* ---------------------------------------------------------------------
  *
  * Copyright (C) 2021 - 2022 by the deal.II authors
@@ -208,7 +209,7 @@ double RightHandSide<dim>::value(const Point<dim> &p,
     level_set_dof_handler.distribute_dofs(fe_level_set);
     level_set.reinit(level_set_dof_handler.n_dofs());
 
-    const Point< dim > & 	center = Point<dim>(1,1,1);
+    const Point< dim > & 	center = Point<dim>(1,1,0.5);
     const Functions::SignedDistance::Sphere<dim> signed_distance_sphere(center, 0.5 );
     VectorTools::interpolate(level_set_dof_handler,
                              signed_distance_sphere,
@@ -1151,12 +1152,12 @@ double RightHandSide<dim>::value(const Point<dim> &p,
         convergence_table.evaluate_convergence_rates(
           "CPU_intersect_accumulation", ConvergenceTable::reduction_rate_log2);
 
-        convergence_table.add_value("Error_interface", abs(interface-(1/8)*PI));
+        convergence_table.add_value("Error_interface", abs(interface-(1./4)*PI));
         convergence_table.evaluate_convergence_rates(
           "Error_interface", ConvergenceTable::reduction_rate_log2);
         convergence_table.set_scientific("Error_interface", true);
 
-        convergence_table.add_value("Error_inside", abs(inside-(1/48)*PI));
+        convergence_table.add_value("Error_inside", abs(inside-(1./24)*PI));
         convergence_table.evaluate_convergence_rates(
           "Error_inside", ConvergenceTable::reduction_rate_log2);
         convergence_table.set_scientific("Error_inside", true);
