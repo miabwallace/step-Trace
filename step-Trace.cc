@@ -259,8 +259,8 @@ double RightHandSide<dim>::value(const Point<dim> &p,
    level_set.reinit(level_set_dof_handler.n_dofs());
 
 
-   const Point< dim > &  center = Point<dim>(0.8,0);
-   const Functions::SignedDistance::Sphere<dim> signed_distance_sphere(center, 0.5 );
+   const Point< dim > &  center = Point<dim>(0.6,0);
+   const Functions::SignedDistance::Sphere<dim> signed_distance_sphere(center, 1.0);
    VectorTools::interpolate(level_set_dof_handler,
                             signed_distance_sphere,
                             level_set);
@@ -1315,13 +1315,13 @@ double RightHandSide<dim>::value(const Point<dim> &p,
          "CPU_intersect_accumulation", ConvergenceTable::reduction_rate_log2);
 
 
-       convergence_table.add_value("Error_interface", abs(interface-1.982309654));
+       convergence_table.add_value("Error_interface", abs(interface-3.964620307));
        convergence_table.evaluate_convergence_rates(
          "Error_interface", ConvergenceTable::reduction_rate_log2);
        convergence_table.set_scientific("Error_interface", true);
 
 
-       convergence_table.add_value("Error_inside", abs(inside-0.5871774134));
+       convergence_table.add_value("Error_inside", abs(inside-2.348592654));
        convergence_table.evaluate_convergence_rates(
          "Error_inside", ConvergenceTable::reduction_rate_log2);
        convergence_table.set_scientific("Error_inside", true);
