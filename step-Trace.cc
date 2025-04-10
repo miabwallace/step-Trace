@@ -89,7 +89,7 @@
 #include <deal.II/non_matching/fe_immersed_values.h>
 #include <deal.II/non_matching/fe_values.h>
 #include <deal.II/non_matching/mesh_classifier.h>
-
+#include <cmath>
 
 // @sect3{The LaplaceSolver class Template}
 // We then define the main class that solves the Laplace problem.
@@ -234,7 +234,7 @@ double RightHandSide<dim>::value(const Point<dim> &p,
                                              3,
                                              -1.0, 1.0);
 
-
+    //boundary points at (1-0.6)^2-(y^2)=1, so x=1, y=+-root(0.84)
    //GridGenerator::hyper_cube(triangulation, 0.0, 2.0);
    //triangulation.refine_global(1);
  }
@@ -260,16 +260,25 @@ double RightHandSide<dim>::value(const Point<dim> &p,
 
 
    const Point< dim > &  center = Point<dim>(0.6,0);
+   //intersection points at x = 1
    const Functions::SignedDistance::Sphere<dim> signed_distance_sphere(center, 1.0);
    VectorTools::interpolate(level_set_dof_handler,
                             signed_distance_sphere,
                             level_set);
  }
 
+const double PI = 3.141592653589793238463;
+double angle = (acos(0.4))*2;
+double inner_angle = (2*PI) - angle;
+double triangle_height = sqrt(0.84);
+//full area = PI, no need to make new thing for it
+//naming it pacman area for now because it looks like a pacman
+double pacman_area = PI * ((inner_angle)/(2*(PI)));
+double triangle_area = (triangle_height)*(0.4);
+double expected_area = pacman_area + triangle_area;
 
-
-
-
+// full perimeter = 2*PI
+double expected_perimeter = 2*PI * ((inner_angle)/(2*(PI)));
 
  // @sect3{Setting up the Finite Element Space}
  // To set up the finite element space $V_\Omega^h$, we will use 2 different
@@ -1252,7 +1261,7 @@ double RightHandSide<dim>::value(const Point<dim> &p,
  void LaplaceBeltramiSolver<dim>::run()
  {
    ConvergenceTable   convergence_table;
-   const unsigned int n_refinements = 7;
+   const unsigned int n_refinements = 9;
 
 
    make_grid();
@@ -1315,13 +1324,13 @@ double RightHandSide<dim>::value(const Point<dim> &p,
          "CPU_intersect_accumulation", ConvergenceTable::reduction_rate_log2);
 
 
-       convergence_table.add_value("Error_interface", abs(interface-3.964620307));
+       convergence_table.add_value("Error_interface", abs(interface-expected_perimeter));
        convergence_table.evaluate_convergence_rates(
          "Error_interface", ConvergenceTable::reduction_rate_log2);
        convergence_table.set_scientific("Error_interface", true);
 
 
-       convergence_table.add_value("Error_inside", abs(inside-2.348592654));
+       convergence_table.add_value("Error_inside", abs(inside-expected_area));
        convergence_table.evaluate_convergence_rates(
          "Error_inside", ConvergenceTable::reduction_rate_log2);
        convergence_table.set_scientific("Error_inside", true);
