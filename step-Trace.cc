@@ -1139,74 +1139,60 @@ double expected_perimeter = 2*PI * ((inner_angle)/(2*(PI)));
  template <int dim>
  double LaplaceBeltramiSolver<dim>::compute_interface()
  {
-   // std::cout << "Computing interface" << std::endl;
-
-
    const QGauss<1> quadrature_1D(fe_degree + 1);
-
-
+ 
    NonMatching::RegionUpdateFlags region_update_flags;
-//    region_update_flags.inside =
-//      update_values | update_JxW_values | update_quadrature_points;
    region_update_flags.surface = update_JxW_values | update_quadrature_points;
-
-
-   NonMatching::FEValues<dim> non_matching_fe_values(fe_collection,
-                                                     quadrature_1D,
-                                                     region_update_flags,
-                                                     mesh_classifier,
-                                                     level_set_dof_handler,
-                                                     level_set);
-
-
-   //cout << "Construction: " << timer.cpu_time() << std::endl;
-
-
-   // We then iterate over the cells that have LocationToLevelSetValue
-   // value inside or intersected again. For each quadrature point, we take
-   // value 1.
-   double   interface = 0;
+ 
+   NonMatching::FEValues<dim> non_matching_fe_values(
+     fe_collection,
+     quadrature_1D,
+     region_update_flags,
+     mesh_classifier,
+     level_set_dof_handler,
+     level_set);
+ 
+   double interface = 0.0;
    int cuts = 0;
-   accumulation_time=0.0;
-   construction_time=0.0;
-   for (const auto &cell :
-        dof_handler.active_cell_iterators() |
-          IteratorFilters::ActiveFEIndexEqualTo(ActiveFEIndex::lagrange))
+   accumulation_time = 0.0;
+   construction_time = 0.0;
+ 
+   for (const auto &cell : dof_handler.active_cell_iterators() |
+                            IteratorFilters::ActiveFEIndexEqualTo(ActiveFEIndex::lagrange))
+   {
+     //skip the cell if it's outside the second level set
+     if (mesh_classifier_2.location_to_level_set(cell) == NonMatching::LocationToLevelSet::outside)
+       continue;
+ 
+     Timer timer;
+     non_matching_fe_values.reinit(cell);  
+     timer.stop();
+ 
+     const std::optional<NonMatching::FEImmersedSurfaceValues<dim>> &surface_fe_values =
+       non_matching_fe_values.get_surface_fe_values();
+ 
+     if (surface_fe_values)
      {
-       Timer timer;
-       non_matching_fe_values.reinit(cell);
+       construction_time += timer.cpu_time();
+       cuts++;
+       timer.restart();
+ 
+       for (const unsigned int q : surface_fe_values->quadrature_point_indices())
+       {
+         interface += surface_fe_values->JxW(q);
+       }
+ 
        timer.stop();
-
-
-       const std::optional<NonMatching::FEImmersedSurfaceValues<dim>>
-         &surface_fe_values = non_matching_fe_values.get_surface_fe_values();
-
-
-
-
-       if (surface_fe_values)
-         {
-           construction_time+=timer.cpu_time();
-           cuts++;
-           timer.restart();
-
-
-           for (const unsigned int q : surface_fe_values->quadrature_point_indices())
-             {
-               const Point<dim> &point = surface_fe_values->quadrature_point(q);
-               interface += 1.0* surface_fe_values->JxW(q);
-             }
-           timer.stop();
-           accumulation_time+=timer.cpu_time();
-         }
+       accumulation_time += timer.cpu_time();
      }
-
-
+   }
+ 
    intersected_cells = cuts;
    return interface;
  }
+ 
 
- template <int dim>
+ /*template <int dim>
  double LaplaceBeltramiSolver<dim>::compute_interface_2()
  {
      const QGauss<1> quadrature_1D(fe_degree + 1);  
@@ -1252,7 +1238,7 @@ double expected_perimeter = 2*PI * ((inner_angle)/(2*(PI)));
  }
  
  
-
+*/
 
 
  template <int dim>
@@ -1413,7 +1399,7 @@ double expected_perimeter = 2*PI * ((inner_angle)/(2*(PI)));
          output_results();
        double interface = 0.0;
        double inside = 0.0;
-       double interface_2 = 0.0;
+       //double interface_2 = 0.0;
        double inside_2 = 0.0;
        int repeat=1;
        double accumulation=0.0;
