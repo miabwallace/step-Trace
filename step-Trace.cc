@@ -137,7 +137,9 @@ namespace StepTrace
 
    double compute_L2_error() const;
    double compute_interface();
+   double compute_interface_2();
    double compute_inside();
+   double compute_inside_2();
    double compute_H1_error() const;
       
    bool face_has_ghost_penalty(
@@ -1163,7 +1165,7 @@ double expected_perimeter = 2*PI * ((inner_angle)/(2*(PI)));
    // We then iterate over the cells that have LocationToLevelSetValue
    // value inside or intersected again. For each quadrature point, we take
    // value 1.
-   double                        interface = 0;
+   double   interface = 0;
    int cuts = 0;
    accumulation_time=0.0;
    construction_time=0.0;
@@ -1204,6 +1206,52 @@ double expected_perimeter = 2*PI * ((inner_angle)/(2*(PI)));
    return interface;
  }
 
+ template <int dim>
+ double LaplaceBeltramiSolver<dim>::compute_interface_2()
+ {
+     const QGauss<1> quadrature_1D(fe_degree + 1);  
+     
+     NonMatching::RegionUpdateFlags region_update_flags;
+     region_update_flags.surface = update_JxW_values | update_quadrature_points;
+ 
+     
+     NonMatching::FEValues<dim> non_matching_fe_values(
+         fe_collection,
+         quadrature_1D,
+         region_update_flags,
+         mesh_classifier_2,
+         level_set_dof_handler_2,
+         level_set_2
+     );
+ 
+     double interface_2 = 0.0;  
+ 
+    
+     for (const auto &cell : dof_handler.active_cell_iterators() |
+                              IteratorFilters::ActiveFEIndexEqualTo(ActiveFEIndex::lagrange))
+     {
+         // check if cell is outside the level set, and skip it if it is
+         if (mesh_classifier.location_to_level_set(cell) == NonMatching::LocationToLevelSet::outside) {
+             continue;  // Skip cells outside the level set
+         }
+ 
+         non_matching_fe_values.reinit(cell); 
+       
+         const std::optional<NonMatching::FEImmersedSurfaceValues<dim>> &surface_fe_values = non_matching_fe_values.get_surface_fe_values();
+ 
+         
+         if (surface_fe_values)
+         {
+            
+             for (const unsigned int q : surface_fe_values->quadrature_point_indices())
+                 interface_2 += surface_fe_values->JxW(q);  
+         }
+     }
+ 
+     return interface_2; 
+ }
+ 
+ 
 
 
 
@@ -1211,8 +1259,6 @@ double expected_perimeter = 2*PI * ((inner_angle)/(2*(PI)));
  double LaplaceBeltramiSolver<dim>::compute_inside()
  {
    //std::cout << "Computing inside" << std::endl;
-
-
    const QGauss<1> quadrature_1D(fe_degree + 1);
 
 
@@ -1281,7 +1327,52 @@ double expected_perimeter = 2*PI * ((inner_angle)/(2*(PI)));
  }
 
 
+ template <int dim>
+ double LaplaceBeltramiSolver<dim>::compute_inside_2()
+ {
+     double inside_2 = 0.0;
+ 
+     
+     for (const auto &cell : dof_handler.active_cell_iterators() |
+                              IteratorFilters::ActiveFEIndexEqualTo(ActiveFEIndex::lagrange))
+     {
+         // check if the cell is outside the level set
+         if (mesh_classifier.location_to_level_set(cell) == NonMatching::LocationToLevelSet::outside) {
+             continue;  
+         }
+ 
+        
+         const QGauss<1> quadrature_1D(fe_degree + 1);
+         NonMatching::RegionUpdateFlags region_update_flags;
+         region_update_flags.inside = update_JxW_values | update_quadrature_points;
+         
+         NonMatching::FEValues<dim> non_matching_fe_values(
+             fe_collection,
+             quadrature_1D,
+             region_update_flags,
+             mesh_classifier_2,
+             level_set_dof_handler_2,
+             level_set_2
+         );
+         
+         non_matching_fe_values.reinit(cell);  
+         
 
+         const std::optional<FEValues<dim>> &fe_values = non_matching_fe_values.get_inside_fe_values();
+ 
+         if (fe_values)
+         {
+            
+             for (const unsigned int q : fe_values->quadrature_point_indices())
+             {
+                 inside_2 += fe_values->JxW(q);
+             }
+         }
+     }
+ 
+     return inside_2;
+ }
+ 
 
 
 
@@ -1302,7 +1393,7 @@ double expected_perimeter = 2*PI * ((inner_angle)/(2*(PI)));
  void LaplaceBeltramiSolver<dim>::run()
  {
    ConvergenceTable   convergence_table;
-   const unsigned int n_refinements = 8;
+   const unsigned int n_refinements = 7;
 
 
    make_grid();
@@ -1322,6 +1413,8 @@ double expected_perimeter = 2*PI * ((inner_angle)/(2*(PI)));
          output_results();
        double interface = 0.0;
        double inside = 0.0;
+       double interface_2 = 0.0;
+       double inside_2 = 0.0;
        int repeat=1;
        double accumulation=0.0;
        double construction=0.0;
@@ -1329,7 +1422,7 @@ double expected_perimeter = 2*PI * ((inner_angle)/(2*(PI)));
        double construction_inside=0.0;
        for (int i=0; i<repeat; i++) {
            interface += (1.0/repeat)*compute_interface();
-           inside += (1.0/repeat)*compute_inside();
+           inside += (1.0/repeat)*compute_inside_2();
            accumulation += (1.0/repeat)*accumulation_time;
            construction += (1.0/repeat)*construction_time;
            accumulation_inside += (1.0/repeat)*accumulation_time_inside;
@@ -1367,13 +1460,13 @@ double expected_perimeter = 2*PI * ((inner_angle)/(2*(PI)));
          "CPU_intersect_accumulation", ConvergenceTable::reduction_rate_log2);
 
 
-       convergence_table.add_value("Error_interface", abs(interface-expected_perimeter));
+       convergence_table.add_value("Error_interface", abs((interface)-expected_perimeter));
        convergence_table.evaluate_convergence_rates(
          "Error_interface", ConvergenceTable::reduction_rate_log2);
        convergence_table.set_scientific("Error_interface", true);
 
 
-       convergence_table.add_value("Error_inside", abs(inside-expected_area));
+       convergence_table.add_value("Error_inside", abs((inside)-expected_area));
        convergence_table.evaluate_convergence_rates(
          "Error_inside", ConvergenceTable::reduction_rate_log2);
        convergence_table.set_scientific("Error_inside", true);
