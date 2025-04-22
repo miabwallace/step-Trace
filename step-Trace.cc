@@ -117,6 +117,9 @@ namespace StepTrace
    void setup_discrete_level_set();
 
 
+   void setup_discrete_level_set_2();
+   
+
    void distribute_dofs();
 
 
@@ -155,8 +158,11 @@ namespace StepTrace
    // We need two separate DoFHandlers. The first manages the DoFs for the
    // discrete level set function that describes the geometry of the domain.
    const FE_Q<dim> fe_level_set;
+   const FE_Q<dim> fe_level_set_2;
    DoFHandler<dim> level_set_dof_handler;
+   DoFHandler<dim> level_set_dof_handler_2;
    Vector<double>  level_set;
+   Vector<double>  level_set_2; //the line
 
 
    // The second DoFHandler manages the DoFs for the solution of the Poisson
@@ -167,6 +173,7 @@ namespace StepTrace
 
 
    NonMatching::MeshClassifier<dim> mesh_classifier;
+   NonMatching::MeshClassifier<dim> mesh_classifier_2;
 
 
    SparsityPattern      sparsity_pattern;
@@ -211,9 +218,12 @@ double RightHandSide<dim>::value(const Point<dim> &p,
    , rhs_function(4.0)
    , boundary_condition(1.0)
    , fe_level_set(fe_degree)
+   , fe_level_set_2(fe_degree)
    , level_set_dof_handler(triangulation)
+   , level_set_dof_handler_2(triangulation)
    , dof_handler(triangulation)
    , mesh_classifier(level_set_dof_handler, level_set)
+   , mesh_classifier_2(level_set_dof_handler_2, level_set_2)
    , intersected_cells(0)
  {}
 
@@ -232,7 +242,7 @@ double RightHandSide<dim>::value(const Point<dim> &p,
    std::cout << "Creating background mesh" << std::endl;
    GridGenerator::subdivided_hyper_cube  (   triangulation,
                                              3,
-                                             -1.0, 1.0);
+                                             -1.0, 2.0);
 
     //boundary points at (1-0.6)^2-(y^2)=1, so x=1, y=+-root(0.84)
    //GridGenerator::hyper_cube(triangulation, 0.0, 2.0);
@@ -266,6 +276,35 @@ double RightHandSide<dim>::value(const Point<dim> &p,
                             signed_distance_sphere,
                             level_set);
  }
+
+ // attempt for second level set:
+template <int dim>
+void LaplaceBeltramiSolver<dim>::setup_discrete_level_set_2()
+{
+ std::cout << "Setting up second level set function (vertical line)" << std::endl;
+
+ //level_set_dof_handler_2.initialize(triangulation, fe_collection);
+ level_set_dof_handler_2.distribute_dofs(fe_level_set_2);
+ level_set_2.reinit(level_set_dof_handler_2.n_dofs());
+
+
+ const Point<dim> point_on_line(1.0, 0.0);              // line at x=0.6
+ Tensor<1, dim> normal_vector;
+ normal_vector[0] = 1.0;
+ normal_vector[1] = 0.0;
+
+
+ const Functions::SignedDistance::Plane<dim> signed_distance_plane(point_on_line, normal_vector);
+
+
+
+
+ VectorTools::interpolate(level_set_dof_handler_2,
+                          signed_distance_plane,
+                          level_set_2);
+}
+
+
 
 const double PI = 3.141592653589793238463;
 double angle = (acos(0.4))*2;
@@ -843,19 +882,21 @@ double expected_perimeter = 2*PI * ((inner_angle)/(2*(PI)));
    DataOut<dim> data_out;
    //data_out.add_data_vector(dof_handler, solution, "solution");
    data_out.add_data_vector(level_set_dof_handler, level_set, "level_set");
-
+   data_out.add_data_vector(level_set_dof_handler_2, level_set_2, "level_set_2");
 
    data_out.set_cell_selection(
-     [this](const typename Triangulation<dim>::cell_iterator &cell) {
-       return cell->is_active() &&
-              mesh_classifier.location_to_level_set(cell) ==
-                /* TraceFEM != NonMatching::LocationToLevelSet::outside;*/
-                 NonMatching::LocationToLevelSet::intersected;
-     });
+    [this](const typename Triangulation<dim>::cell_iterator &cell) {
+      return cell->is_active() &&
+             mesh_classifier.location_to_level_set(cell) ==
+               NonMatching::LocationToLevelSet::intersected &&
+             mesh_classifier_2.location_to_level_set(cell) ==
+               NonMatching::LocationToLevelSet::inside;
+    });
+  
 
 
    data_out.build_patches();
-   std::ofstream output("step-Trace.vtu");
+   std::ofstream output("step-Trace-NEWEST.vtu");
    data_out.write_vtu(output);
  }
 
@@ -1261,7 +1302,7 @@ double expected_perimeter = 2*PI * ((inner_angle)/(2*(PI)));
  void LaplaceBeltramiSolver<dim>::run()
  {
    ConvergenceTable   convergence_table;
-   const unsigned int n_refinements = 9;
+   const unsigned int n_refinements = 8;
 
 
    make_grid();
@@ -1269,8 +1310,10 @@ double expected_perimeter = 2*PI * ((inner_angle)/(2*(PI)));
      {
        std::cout << "Refinement cycle " << cycle << std::endl;
        setup_discrete_level_set();
+       setup_discrete_level_set_2();
        std::cout << "Classifying cells" << std::endl;
        mesh_classifier.reclassify();
+       mesh_classifier_2.reclassify();
        distribute_dofs();
        //initialize_matrices();
        //assemble_system();
@@ -1364,4 +1407,3 @@ int main()
  StepTrace::LaplaceBeltramiSolver<dim> LB_solver;
  LB_solver.run();
 }
-
